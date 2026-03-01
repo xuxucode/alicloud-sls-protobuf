@@ -2,6 +2,8 @@
 
 TypeScript SDK for Alibaba Cloud Log Service (SLS), with protobuf log ingestion support.
 
+Note: This project uses `@bufbuild/protobuf` instead of `protobufjs` so it can run reliably in Bun projects.
+
 ## Install
 
 ```bash
