@@ -1,8 +1,35 @@
+# dependencies (bun install)
 node_modules
-example
-.DS_Store
+
+# output
+out
+dist
+*.tgz
+
+# code coverage
 coverage
-.nyc_output
-test/config.js
-test/figures/*.zip
-doc/*
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# .env, .env.development, and .env.production files should be included in the
+# repository as they define defaults. .env*.local should be added to .gitignore,
+# as those files are intended to be ignored. See https://bit.ly/3UXfcQm.
+.env*.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# configuration
+config*.toml

@@ -1,0 +1,20 @@
+{
+  // https://eslint.style/guide/faq#how-to-auto-format-on-save
+  "editor.formatOnSave": false,
+  // "editor.codeActionsOnSave": {
+  //   "source.fixAll.eslint": "explicit",
+  //   "source.organizeImports": "explicit"
+  // },
+  // Ensure action execution order using array.
+  // https://github.com/microsoft/vscode-eslint/issues/939
+  "editor.codeActionsOnSave": [
+    "source.organizeImports",
+    "source.fixAll.eslint"
+  ],
+  "cSpell.words": [
+  ],
+  "cSpell.ignorePaths": [
+    "gen",
+    "dist"
+  ]
+}

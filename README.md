@@ -1,71 +1,139 @@
-# Integration Test
+# alicloud-sls-protobuf
 
-1. Create a test project
-2. Create two test stores under that project, one with index configured
-  * The first one (without log index configured) will be used to test index CRUD
-  * The second one (with log index configured) will be used to test log retrieval
-3. Run
+TypeScript SDK for Alibaba Cloud Log Service (SLS), with protobuf log ingestion support.
 
-  ```
-  ACCESS_KEY_ID=<key> ACCESS_KEY_SECRET=<secret> TEST_PROJECT=<project you have created> TEST_STORE=<test store without index> TEST_STORE2=<test store with index> make test
-  ```
+## Install
 
-## Init Client
-
-### Use permanent accessKey
-
-use region  
-
-```javaScript
-const client = new Client({
-  accessKeyId: "your_access_key_id",
-  accessKeySecret: "your_access_key_secret",
-  region: 'cn-hangzhou'
-});
+```bash
+bun add alicloud-sls-protobuf
+# or
+npm i alicloud-sls-protobuf
 ```
 
-or use endpoint  
+## Quick Start
 
-```javaScript
+### Initialize client (AK/SK)
+
+```ts
+import { Client } from 'alicloud-sls-protobuf'
+
 const client = new Client({
-  accessKeyId: "your_access_key_id",
-  accessKeySecret: "your_access_key_secret",
-  endpoint: 'cn-hangzhou.log.aliyuncs.com'
-});
+  accessKeyId: process.env.ACCESS_KEY_ID!,
+  accessKeySecret: process.env.ACCESS_KEY_SECRET!,
+  region: 'cn-hangzhou',
+})
 ```
 
-### Use Credentials Provider  
+### Initialize with endpoint
 
-The CredentialsProvider offers a more convenient and secure way to obtain credentials from external sources. You can retrieve these credentials from your server or other Alibaba Cloud services, and rotate them on a regular basis.  
+```ts
+import { Client } from 'alicloud-sls-protobuf'
 
-```javaScript
-const yourCredentialsProvider = new YourCredentialsProvider();
 const client = new Client({
-  credentialsProvider: yourCredentialsProvider,
-  region: 'cn-hangzhou'
-});
+  accessKeyId: process.env.ACCESS_KEY_ID!,
+  accessKeySecret: process.env.ACCESS_KEY_SECRET!,
+  endpoint: 'cn-hangzhou.log.aliyuncs.com',
+  // or endpoint: 'https://cn-hangzhou.log.aliyuncs.com'
+})
 ```
 
-The credentialsProvider implemented by yourself must be an object that has a property named   `getCredentials`, and `getCredentials` is a callable function/method that returns a credentials object.  
+### Initialize with Credentials Provider (recommended for STS)
 
-The returned credentials object from `getCredentials` must not be null or undefined, and has properties named `accessKeyId`, `accessKeySecret` and `securityToken`.
+`credentialsProvider` must expose an async `getCredentials()` method that returns:
+- `accessKeyId`
+- `accessKeySecret`
+- optional `securityToken`
 
-Here is a simple example of a credentialsProvider:  
+```ts
+import { Client, type Credentials } from 'alicloud-sls-protobuf'
 
-```javaScript
-class YourCredentialsProvider {
-  constructor() {
-    this.credentials = {
-      accessKeyId: "your_access_key_id",
-      accessKeySecret: "your_access_key_secret",
-      securityToken: "your_security_token"
-    };
-  }
-  // The method getCredentials is called by client to get credentials for signing and authentication.
-  // Caching and refreshing logic is required in your implementation for performance.
-  async getCredentials() {
-    return this.credentials;
+class MyCredentialsProvider {
+  async getCredentials(): Promise<Credentials> {
+    return {
+      accessKeyId: 'your-access-key-id',
+      accessKeySecret: 'your-access-key-secret',
+      securityToken: 'your-security-token',
+    }
   }
 }
+
+const client = new Client({
+  region: 'cn-hangzhou',
+  credentialsProvider: new MyCredentialsProvider(),
+})
 ```
 
+## Write Logs (protobuf)
+
+Use `convertObjectToKeyValueArray` to build `Contents`/`LogTags` quickly.
+
+```ts
+import { Client, convertObjectToKeyValueArray } from 'alicloud-sls-protobuf'
+
+const client = new Client({
+  accessKeyId: process.env.ACCESS_KEY_ID!,
+  accessKeySecret: process.env.ACCESS_KEY_SECRET!,
+  region: process.env.REGION ?? 'cn-hangzhou',
+})
+
+await client.postLogStoreLogs('your-project', 'your-logstore', {
+  Logs: [
+    {
+      Time: Math.floor(Date.now() / 1000),
+      Contents: convertObjectToKeyValueArray({
+        level: 'info',
+        message: 'hello sls',
+      }),
+    },
+  ],
+  LogTags: convertObjectToKeyValueArray({
+    env: 'test',
+  }),
+})
+```
+
+## Query Examples
+
+```ts
+const now = new Date()
+const from = new Date(now.getTime() - 15 * 60 * 1000)
+
+const logs = await client.getLogs('your-project', 'your-logstore', from, now, {
+  query: '*',
+  line: 100,
+})
+
+const histograms = await client.getHistograms('your-project', 'your-logstore', from, now, {
+  query: '*',
+})
+```
+
+## Main APIs
+
+- Project: `getProject`, `getProjectLogs`, `createProject`, `deleteProject`
+- Logstore: `listLogStore`, `createLogStore`, `updateLogStore`, `getLogStore`, `deleteLogStore`
+- Index: `getIndexConfig`, `createIndex`, `updateIndex`, `deleteIndex`
+- Query: `getLogs`, `getHistograms`
+- Ingestion: `postLogStoreLogs`
+
+## Integration Test
+
+1. Copy env template:
+
+```bash
+cp .env.test.local.example .env.test.local
+```
+
+2. Fill values in `.env.test.local`:
+- `TEST_PROJECT`
+- `TEST_STORE` (logstore without index)
+- `TEST_STORE2` (logstore with index)
+- `ACCESS_KEY_ID`
+- `ACCESS_KEY_SECRET`
+- `REGION`
+
+3. Run integration test:
+
+```bash
+RUN_INTEGRATION=1 bun test --env-file .env.test.local src/integration.test.ts
+```

@@ -1,5 +1,6 @@
-/* c8 ignore file */
-import Client from './client';
+/**
+ * See https://github.com/cobbcheng/aliyun-log-nodejs-sdk
+ */
 
-export * from './client';
-export default Client;
+export * from './client.js'
+export * from './utils.js'
