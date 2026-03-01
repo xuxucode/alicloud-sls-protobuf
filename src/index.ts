@@ -3,4 +3,5 @@
  */
 
 export * from './client.js'
+export * from './gen/sls/sls_pb.js'
 export * from './utils.js'
